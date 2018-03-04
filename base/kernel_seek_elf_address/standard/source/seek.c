@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <sys/types.h>
+#define PS4_PAGE_SIZE 0x4000
 #define PS4_KERNEL_ELF_RANGE_ADDRESS (char *)0xffffffff80000000
 enum{ PS4_KERNEL_ELF_RANGE_SIZE = 0x02000000 };
 #define PS4_KERNEL_ELF_FIXED_ADDRESS (char *)0xffffffff80700000
@@ -8,18 +9,18 @@ enum{ PS4_KERNEL_ELF_PAGE_SIZE = 16 * 1024 }; // no dependencies
 
 extern uint32_t sdkVersion;
 
+void *ps4KernelFindSkippedPageStart(uint64_t addr, size_t skip)
+{
+	int remainder = (addr + (skip * PS4_PAGE_SIZE)) % PS4_PAGE_SIZE;
+	if(remainder == 0)
+		return (void*)addr;
+	else
+		return (void*)(addr + PS4_PAGE_SIZE - remainder);
+}
+
 void *ps4KernelFindClosestPageStart(uint64_t addr)
 {
-
-	int remainder = addr % 0x4000;
-	if(remainder == 0)
-	{
-		return addr;
-	}
-	else
-	{
-		return addr + 0x4000 - remainder;
-	}
+	return ps4KernelFindSkippedPageStart(addr, 0);
 }
 
 void *ps4KernelSeekElfAddress()
@@ -42,6 +43,8 @@ void *ps4KernelSeekElfAddress()
 		}
 	
 		char *startaddr = ps4KernelFindClosestPageStart(rip);
+		if(sdkVersion == 0x4050001)
+			startaddr = ps4KernelFindSkippedPageStart(rip, -196);
 	
 		for(char *m = startaddr;m > startaddr - PS4_KERNEL_ELF_RANGE_SIZE;m -= PS4_KERNEL_ELF_PAGE_SIZE)
 		{
