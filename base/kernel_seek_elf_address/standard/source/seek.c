@@ -37,7 +37,7 @@ void *ps4KernelSeekElfAddress()
 		rip = (uint64_t)__edx << 32 | __eax;
 	}
 
-	char *startaddr = xps4KernelFindClosestPageStart(rip);
+	char *startaddr = ps4KernelFindClosestPageStart(rip);
 
 	for(char *m = startaddr;m > startaddr - PS4_KERNEL_ELF_RANGE_SIZE;m -= PS4_KERNEL_ELF_PAGE_SIZE)
 	{
